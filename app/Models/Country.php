@@ -8,13 +8,6 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Country extends Model
 {
-
-    protected $table = 'country';
-
-    public $fillable = [
-        'status_backup'
-    ];
-
     public $name;
 
     public $initial;
