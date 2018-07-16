@@ -2,12 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\BO\CountryBO;
 use App\Models\Country;
 use App\Exports\InvoicesExport;
 
 use Maatwebsite\Excel\Excel;
-
+use App\Service\CountryService;
 
 
 /**
@@ -18,17 +17,14 @@ use Maatwebsite\Excel\Excel;
 class CountryController extends Controller
 {
 
-    private $countryBO;
-
     private $country;
 
-    private $excel;
+    private $countryService;
 
-    public function __construct(CountryBO $countryBO, Country $country, \Maatwebsite\Excel\Exporter $excel)
+    public function __construct(Country $country)
     {
         $this->country = $country;
-        $this->countryBO = $countryBO;
-        $this->excel = $excel;
+        $this->countryService = CountryService::newInstance();
     }
 
     /**
@@ -36,10 +32,11 @@ class CountryController extends Controller
      */
     public function getCountrys()
     {
-        try{
+        try {
+
             return $this->fileToArrayContrys();
-        } catch (\Exception $e) {
-            $e->getMessage();
+        } catch (\App\Exceptions\NotFoundmonException $e) {
+            return $e->getMessage();
         }
     }
 
@@ -48,8 +45,13 @@ class CountryController extends Controller
      */
     public function makeCsv(Excel $excel)
     {
-        $export = new InvoicesExport($this->fileToArrayContrys());
-        return $excel->download($export, 'invoices.csv');
+        try {
+
+            $export = new InvoicesExport($this->fileToArrayContrys());
+            return $excel->download($export, 'invoices.csv');
+        } catch (\App\Exceptions\NotFoundmonException $e) {
+            return $e->getMessage();
+        }
     }
 
     /**
@@ -57,8 +59,13 @@ class CountryController extends Controller
      */
     public function makeXlsx(Excel $excel)
     {
-        $export = new InvoicesExport($this->fileToArrayContrys());
-        return $excel->download($export, 'invoices.xlsx');
+        try {
+
+            $export = new InvoicesExport($this->fileToArrayContrys());
+            return $excel->download($export, 'invoices.xlsx');
+        } catch (\App\Exceptions\NotFoundmonException $e) {
+            return $e->getMessage();
+        }
     }
 
     /**
@@ -66,22 +73,23 @@ class CountryController extends Controller
      */
     public function fileToArrayContrys()
     {
-        try{
+        try {
 
-            $file = $this->countryBO->getCountrys();
+            $file = $this->countryService->getCountrys();
 
             $countries = [];
-            foreach ($file as $data){
+            foreach ($file as $data) {
 
                 $line = explode('   ', $data);
-                if(count($line) == 2){
+                if (count($line) == 2) {
 
                     $this->country->setName($line[1]);
                     $this->country->setInitial($line[0]);
 
                     array_push($countries, [
                         'initial' => $this->country->getInitial(),
-                        'name' => $this->country->getName()
+                        'name' => $this->country->getName(),
+                        'br' => '(BR) BRASIL'
                     ]);
                 }
             }
@@ -89,8 +97,8 @@ class CountryController extends Controller
             $countries = array_reverse($countries);
 
             return array_slice($countries, 9);
-        } catch (\Exception $e) {
-            $e->getMessage();
+        } catch (\App\Exceptions\NotFoundmonException $e) {
+            return $e->getMessage();
         }
     }
 }

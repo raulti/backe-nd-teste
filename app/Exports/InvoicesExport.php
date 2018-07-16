@@ -18,7 +18,8 @@ class InvoicesExport implements FromCollection, WithHeadings
     {
         return [
             'Sigla',
-            'Nome'
+            'Nome',
+            'BR'
         ];
     }
 
